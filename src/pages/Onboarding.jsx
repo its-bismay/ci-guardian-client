@@ -79,7 +79,7 @@ export default function Onboarding() {
     setTelegramError(null);
     setTelegramSent(true);
     api.post('/notifications/telegram/setup-webhook').then(() => {
-      return api.get('/notifications/telegram/link-code');
+      return api.post('/notifications/telegram/link-code');
     }).then((r) => {
       setTelegramCode(r.code);
       setTelegramBot(r.url.match(/t\.me\/([^?]+)/)?.[1] || 'bot');

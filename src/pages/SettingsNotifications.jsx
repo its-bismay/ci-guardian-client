@@ -30,7 +30,7 @@ export default function SettingsNotifications() {
     setLinking(true);
     try {
       await api.post('/notifications/telegram/setup-webhook');
-      const r = await api.get('/notifications/telegram/link-code');
+      const r = await api.post('/notifications/telegram/link-code');
       setLinkCode(r.code);
       window.open(r.url, '_blank');
     } catch {
@@ -60,30 +60,30 @@ export default function SettingsNotifications() {
         <div className="card-body">
           <h2 className="card-title">Telegram</h2>
           {telegramChannel?.verified ? (
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-success font-semibold">Connected</span>
-                <p className="text-sm text-base-content/50 mt-1">Chat ID: {telegramChannel.external_id}</p>
-              </div>
-            </div>
+            <div className="alert alert-success">Telegram connected — you will receive build alerts here.</div>
           ) : linkCode ? (
             <div>
-              <p className="text-base-content/70 mb-2">Open Telegram and send this command to the bot:</p>
-              <code className="text-lg font-bold bg-base-300 px-3 py-1 rounded select-all block mb-2">
-                /start {linkCode}
-              </code>
+              <ol className="steps steps-vertical mb-4">
+                <li className="step step-primary">Open Telegram</li>
+                <li className="step step-primary">Search for the CI Guardian bot</li>
+                <li className="step">Send the code below to the bot</li>
+              </ol>
+              <div className="bg-base-300 rounded-lg p-4 mb-3 text-center">
+                <p className="text-sm text-base-content/50 mb-1">Send this to the bot:</p>
+                <code className="text-xl font-bold select-all">/start {linkCode}</code>
+              </div>
               {linkError && <div className="alert alert-error text-sm mb-2">{linkError}</div>}
-              <button onClick={checkConnection} className="btn btn-primary btn-sm mr-2">
-                Check connection
+              <button onClick={checkConnection} className="btn btn-primary btn-sm">
+                I sent the code — check connection
               </button>
-              <button onClick={() => { setLinking(false); setLinkCode(null); }} className="btn btn-ghost btn-sm">
+              <button onClick={() => { setLinking(false); setLinkCode(null); }} className="btn btn-ghost btn-sm ml-2">
                 Cancel
               </button>
             </div>
           ) : (
             <div>
               <p className="text-base-content/70 mb-3">
-                Receive CI failure alerts directly on Telegram.
+                Get notified on Telegram when a CI build fails.
               </p>
               {linkError && <div className="alert alert-error text-sm mb-3">{linkError}</div>}
               <button onClick={connectTelegram} className="btn btn-primary" disabled={linking}>
