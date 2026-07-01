@@ -1,7 +1,16 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import ThemeToggle from '../components/ThemeToggle';
 
 export default function Landing() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (localStorage.getItem('ci_guardian_token')) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-base-200">
       <div className="navbar bg-base-100 border-b border-base-300">

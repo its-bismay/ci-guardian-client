@@ -1,19 +1,33 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 
 const STEPS = ['Install App', 'Select Repos', 'Connect Telegram'];
 
 export default function Onboarding() {
   const [step, setStep] = useState(0);
-  const [repos, setRepos] = useState([]);
+  const [repos, setRepos] = useState(null);
   const [selected, setSelected] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [params] = useSearchParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (step === 1) {
-      api.get('/github/repos').then(setRepos).catch(() => {});
+    if (params.get('installed') === '1') {
+      setStep(1);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (step === 1 && repos === null) {
+      setError(null);
+      api.get('/github/repos').then((data) => {
+        setRepos(data);
+        if (data.length === 0) setError('No repos found. Make sure you installed the app on at least one repo.');
+      }).catch((err) => {
+        setError(err.message || 'Failed to fetch repos. Try again.');
+      });
     }
   }, [step]);
 
@@ -29,8 +43,12 @@ export default function Onboarding() {
 
   const saveRepos = async () => {
     setLoading(true);
-    await Promise.all(selected.map((id) => api.post(`/github/repos/${id}/toggle`, { is_monitored: true })));
-    setStep(2);
+    try {
+      await Promise.all(selected.map((id) => api.post(`/github/repos/${id}/toggle`, { is_monitored: true })));
+      setStep(2);
+    } catch (err) {
+      setError('Failed to save repo selection.');
+    }
     setLoading(false);
   };
 
@@ -40,6 +58,9 @@ export default function Onboarding() {
     <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
       <div className="card bg-base-100 shadow-xl max-w-xl w-full">
         <div className="card-body p-8">
+          {params.get('error') === 'auth_required' && (
+            <div className="alert alert-warning mb-4 text-sm">Session expired. Please log in again.</div>
+          )}
           <ul className="steps steps-horizontal mb-8 w-full">
             {STEPS.map((s, i) => (
               <li key={s} className={`step ${i <= step ? 'step-primary' : ''}`}>{s}</li>
@@ -66,9 +87,13 @@ export default function Onboarding() {
           {step === 1 && (
             <div>
               <h2 className="text-2xl font-bold mb-4">Select Repos to Monitor</h2>
+              {error && <div className="alert alert-error mb-4 text-sm">{error}
+                <button onClick={() => { setRepos(null); setError(null); }} className="btn btn-ghost btn-xs ml-2">Retry</button>
+              </div>}
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {repos.length === 0 && <p className="text-base-content/50">Loading repos...</p>}
-                {repos.map((r) => (
+                {repos === null && !error && <div className="flex justify-center py-4"><span className="loading loading-spinner" /></div>}
+                {repos && repos.length === 0 && !error && <p className="text-base-content/50">No repos found. Make sure you granted access to at least one repo.</p>}
+                {repos && repos.map((r) => (
                   <label key={r.id} className="flex items-center gap-3 p-2 hover:bg-base-200 rounded-lg cursor-pointer">
                     <input
                       type="checkbox"
