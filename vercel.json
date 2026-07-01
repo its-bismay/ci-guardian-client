@@ -1,5 +1,12 @@
 {
   "rewrites": [
+    { "source": "/auth/(.*)", "destination": "https://ci-guardian-server.onrender.com/auth/$1" },
+    { "source": "/github/(.*)", "destination": "https://ci-guardian-server.onrender.com/github/$1" },
+    { "source": "/runs/(.*)", "destination": "https://ci-guardian-server.onrender.com/runs/$1" },
+    { "source": "/reports/(.*)", "destination": "https://ci-guardian-server.onrender.com/reports/$1" },
+    { "source": "/notifications/(.*)", "destination": "https://ci-guardian-server.onrender.com/notifications/$1" },
+    { "source": "/events/(.*)", "destination": "https://ci-guardian-server.onrender.com/events/$1" },
+    { "source": "/health", "destination": "https://ci-guardian-server.onrender.com/health" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
