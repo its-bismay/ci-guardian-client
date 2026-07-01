@@ -20,7 +20,8 @@ export default function SettingsNotifications() {
   });
 
   const connectTelegram = async () => {
-    const { url } = await api.post('/notifications/telegram/link-code');
+    await api.post('/notifications/telegram/setup-webhook');
+    const { url } = await api.get('/notifications/telegram/link-code');
     window.open(url, '_blank');
   };
 

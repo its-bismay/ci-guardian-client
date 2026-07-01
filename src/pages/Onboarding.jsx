@@ -78,13 +78,15 @@ export default function Onboarding() {
   const connectTelegram = () => {
     setTelegramError(null);
     setTelegramSent(true);
-    api.get('/notifications/telegram/link-code').then((r) => {
+    api.post('/notifications/telegram/setup-webhook').then(() => {
+      return api.get('/notifications/telegram/link-code');
+    }).then((r) => {
       setTelegramCode(r.code);
       setTelegramBot(r.url.match(/t\.me\/([^?]+)/)?.[1] || 'bot');
-      window.location.href = r.url;
+      window.open(r.url, '_blank');
       pollTelegramStatus();
     }).catch((err) => {
-      setTelegramError(err.message || 'Failed to get Telegram link.');
+      setTelegramError(err.message || 'Telegram not configured. Ask the admin to set TELEGRAM_BOT_TOKEN on Render.');
       setTelegramSent(false);
     });
   };
@@ -189,56 +191,52 @@ export default function Onboarding() {
 
           {step === 2 && (
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-4">Connect Telegram</h2>
+              <h2 className="text-2xl font-bold mb-4">Link Telegram</h2>
               {telegramError && <div className="alert alert-error mb-4 text-sm">{telegramError}</div>}
               <p className="text-base-content/70 mb-6">
-                CI Guardian sends failure alerts to Telegram. <strong>This step is required.</strong>
+                CI Guardian sends alerts to Telegram when a build fails. <strong>This step is required.</strong>
               </p>
               {!telegramSent ? (
-                <button onClick={connectTelegram} className="btn btn-primary btn-lg mb-4">
-                  Connect Telegram
-                </button>
+                <div>
+                  <p className="text-base-content/60 mb-4 text-sm">
+                    Make sure you have the <strong>@ci_guardian_bot</strong> Telegram bot created (via BotFather) and
+                    the <code>TELEGRAM_BOT_TOKEN</code> env var set on Render.
+                  </p>
+                  <button onClick={connectTelegram} className="btn btn-primary btn-lg">
+                    Connect Telegram
+                  </button>
+                </div>
               ) : telegramConnected ? (
-                <div className="mb-4">
-                  <div className="alert alert-success mb-4">✅ Telegram connected!</div>
+                <div>
+                  <div className="alert alert-success mb-4">Telegram connected!</div>
                   <button onClick={finish} className="btn btn-primary btn-lg">
                     Go to Dashboard
                   </button>
                 </div>
               ) : (
-                <div className="mb-4">
-                  <p className="text-base-content/70 mb-2">
-                    Open Telegram and send this code to the bot:
-                  </p>
-                  <div className="text-lg font-mono font-bold bg-base-300 py-3 px-6 rounded-lg inline-block mb-4 select-all">
-                    /start {telegramCode || '...'}
-                  </div>
-                  <p className="text-sm text-base-content/50 mb-4">
-                    Search for <strong>@{telegramBot || 'ci_guardian_bot'}</strong> in Telegram and send the command above
-                  </p>
-                  <div className="flex items-center justify-center gap-2 mb-4">
+                <div>
+                  <div className="flex items-center justify-center gap-2 mb-3">
                     {polling && <span className="loading loading-spinner loading-sm text-primary" />}
-                    <span className="text-sm text-base-content/50">
-                      {polling ? 'Waiting for connection...' : ''}
+                    <span className="text-base-content/70">
+                      {polling ? 'Waiting for you to send the code on Telegram...' : ''}
                     </span>
                   </div>
-                  {!polling && (
-                    <button
-                      onClick={() => {
-                        setTelegramSent(false);
-                        setTelegramConnected(false);
-                        setTelegramCode(null);
-                      }}
-                      className="btn btn-ghost btn-sm"
-                    >
-                      Try again
-                    </button>
-                  )}
-                  {!polling && (
-                    <button onClick={() => pollTelegramStatus()} className="btn btn-primary btn-sm ml-2">
-                      Check connection
-                    </button>
-                  )}
+                  <div className="bg-base-300 rounded-lg p-4 mb-4 inline-block">
+                    <p className="text-sm text-base-content/50 mb-1">Open Telegram and send this to the bot:</p>
+                    <code className="text-lg font-bold select-all">/start {telegramCode || '...'}</code>
+                  </div>
+                  <p className="text-sm text-base-content/50 mb-4">
+                    Search for <strong>@{telegramBot || 'ci_guardian_bot'}</strong> in Telegram
+                  </p>
+                  <button onClick={() => pollTelegramStatus()} className="btn btn-primary btn-sm">
+                    Check connection
+                  </button>
+                  <button
+                    onClick={() => { setTelegramSent(false); setTelegramConnected(false); setTelegramCode(null); }}
+                    className="btn btn-ghost btn-sm ml-2"
+                  >
+                    Back
+                  </button>
                 </div>
               )}
             </div>

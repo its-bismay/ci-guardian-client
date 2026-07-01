@@ -60,7 +60,7 @@ export default function SettingsRepos() {
                     </td>
                     <td>
                       <span className={`badge ${r.is_monitored ? 'badge-success' : 'badge-ghost'}`}>
-                        {r.is_monitored ? 'Active' : 'Paused'}
+                        {r.is_monitored ? 'Monitoring' : 'Inactive'}
                       </span>
                     </td>
                     <td>
@@ -68,7 +68,7 @@ export default function SettingsRepos() {
                         className={`btn btn-xs ${r.is_monitored ? 'btn-warning' : 'btn-primary'}`}
                         onClick={() => toggleMutation.mutate({ id: r.id, is_monitored: !r.is_monitored })}
                       >
-                        {r.is_monitored ? 'Pause' : 'Resume'}
+                        {r.is_monitored ? 'Stop' : 'Monitor'}
                       </button>
                     </td>
                   </tr>
