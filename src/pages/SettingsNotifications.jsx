@@ -1,7 +1,11 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
 export default function SettingsNotifications() {
+  const [linking, setLinking] = useState(false);
+  const [linkCode, setLinkCode] = useState(null);
+  const [linkError, setLinkError] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: channels } = useQuery({
@@ -19,13 +23,39 @@ export default function SettingsNotifications() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notification-preferences'] }),
   });
 
-  const connectTelegram = async () => {
+  const telegramChannel = channels?.find((c) => c.channel_type === 'telegram');
+
+  const setupWebhook = async () => {
+    setLinkError(null);
     await api.post('/notifications/telegram/setup-webhook');
-    const { url } = await api.get('/notifications/telegram/link-code');
-    window.open(url, '_blank');
   };
 
-  const telegramChannel = channels?.find((c) => c.channel_type === 'telegram');
+  const connectTelegram = async () => {
+    setLinkError(null);
+    setLinking(true);
+    try {
+      await setupWebhook();
+      const r = await api.get('/notifications/telegram/link-code');
+      setLinkCode(r.code);
+      window.open(r.url, '_blank');
+    } catch (err) {
+      setLinkError(err.message || 'Failed. Make sure TELEGRAM_BOT_TOKEN is set on Render.');
+      setLinking(false);
+    }
+  };
+
+  const checkConnection = async () => {
+    try {
+      const r = await api.get('/notifications/telegram/status');
+      if (r.connected) {
+        queryClient.invalidateQueries({ queryKey: ['notification-channels'] });
+        setLinking(false);
+        setLinkCode(null);
+      } else {
+        setLinkError('Not connected yet. Send the code to the bot on Telegram.');
+      }
+    } catch { /* ignore */ }
+  };
 
   return (
     <div>
@@ -36,17 +66,37 @@ export default function SettingsNotifications() {
           <h2 className="card-title">Telegram</h2>
           {telegramChannel?.verified ? (
             <div className="flex items-center justify-between">
-              <span className="text-success">✅ Connected</span>
-              <button className="btn btn-outline btn-sm">Disconnect</button>
+              <div>
+                <span className="text-success font-semibold">Connected</span>
+                <p className="text-sm text-base-content/50 mt-1">Chat ID: {telegramChannel.external_id}</p>
+              </div>
+            </div>
+          ) : linkCode ? (
+            <div>
+              <p className="text-base-content/70 mb-2">Open Telegram and send this command to the bot:</p>
+              <code className="text-lg font-bold bg-base-300 px-3 py-1 rounded select-all block mb-2">
+                /start {linkCode}
+              </code>
+              {linkError && <div className="alert alert-error text-sm mb-2">{linkError}</div>}
+              <button onClick={checkConnection} className="btn btn-primary btn-sm mr-2">
+                Check connection
+              </button>
+              <button onClick={() => { setLinking(false); setLinkCode(null); }} className="btn btn-ghost btn-sm">
+                Cancel
+              </button>
             </div>
           ) : (
             <div>
               <p className="text-base-content/70 mb-3">
-                Get instant CI alerts in Telegram.
+                Receive CI failure alerts directly on Telegram.
               </p>
-              <button onClick={connectTelegram} className="btn btn-primary">
-                Connect Telegram
+              {linkError && <div className="alert alert-error text-sm mb-3">{linkError}</div>}
+              <button onClick={connectTelegram} className="btn btn-primary" disabled={linking}>
+                {linking ? <span className="loading loading-spinner loading-xs" /> : 'Connect Telegram'}
               </button>
+              <p className="text-xs text-base-content/40 mt-2">
+                Requires <code>TELEGRAM_BOT_TOKEN</code> env var and a bot created via BotFather.
+              </p>
             </div>
           )}
         </div>

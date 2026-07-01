@@ -203,13 +203,14 @@ export default function Onboarding() {
               </p>
               {!telegramSent ? (
                 <div>
-                  <p className="text-base-content/60 mb-4 text-sm">
-                    Make sure you have the <strong>@ci_guardian_bot</strong> Telegram bot created (via BotFather) and
-                    the <code>TELEGRAM_BOT_TOKEN</code> env var set on Render.
-                  </p>
-                  <button onClick={connectTelegram} className="btn btn-primary btn-lg">
+                  <button onClick={connectTelegram} className="btn btn-primary btn-lg mb-3">
                     Connect Telegram
                   </button>
+                  <div>
+                    <button onClick={finish} className="btn btn-ghost text-sm">
+                      Skip for now — set up later in Settings
+                    </button>
+                  </div>
                 </div>
               ) : telegramConnected ? (
                 <div>
