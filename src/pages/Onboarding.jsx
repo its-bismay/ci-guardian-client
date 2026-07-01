@@ -16,6 +16,8 @@ export default function Onboarding() {
   const [telegramConnected, setTelegramConnected] = useState(false);
   const [telegramSent, setTelegramSent] = useState(false);
   const [polling, setPolling] = useState(false);
+  const [telegramCode, setTelegramCode] = useState(null);
+  const [telegramBot, setTelegramBot] = useState('');
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
@@ -77,6 +79,8 @@ export default function Onboarding() {
     setTelegramError(null);
     setTelegramSent(true);
     api.get('/notifications/telegram/link-code').then((r) => {
+      setTelegramCode(r.code);
+      setTelegramBot(r.url.match(/t\.me\/([^?]+)/)?.[1] || 'bot');
       window.location.href = r.url;
       pollTelegramStatus();
     }).catch((err) => {
@@ -204,24 +208,37 @@ export default function Onboarding() {
               ) : (
                 <div className="mb-4">
                   <p className="text-base-content/70 mb-2">
-                    Open Telegram and send this code to the <strong>CI Guardian</strong> bot:
+                    Open Telegram and send this code to the bot:
                   </p>
-                  <div className="text-2xl font-mono font-bold bg-base-300 py-3 px-6 rounded-lg inline-block mb-4">
-                    {params.get('installed') === '1' ? 'Check the bot on Telegram' : 'Waiting for connection...'}
+                  <div className="text-lg font-mono font-bold bg-base-300 py-3 px-6 rounded-lg inline-block mb-4 select-all">
+                    /start {telegramCode || '...'}
                   </div>
                   <p className="text-sm text-base-content/50 mb-4">
-                    Search for <strong>@ci_guardian_bot</strong> in Telegram and send /start
+                    Search for <strong>@{telegramBot || 'ci_guardian_bot'}</strong> in Telegram and send the command above
                   </p>
-                  <button
-                    onClick={() => {
-                      setTelegramSent(false);
-                      setTelegramConnected(false);
-                    }}
-                    className="btn btn-ghost btn-sm"
-                    disabled={polling}
-                  >
-                    {polling ? <><span className="loading loading-spinner loading-xs mr-1" /> Waiting...</> : 'Try again'}
-                  </button>
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    {polling && <span className="loading loading-spinner loading-sm text-primary" />}
+                    <span className="text-sm text-base-content/50">
+                      {polling ? 'Waiting for connection...' : ''}
+                    </span>
+                  </div>
+                  {!polling && (
+                    <button
+                      onClick={() => {
+                        setTelegramSent(false);
+                        setTelegramConnected(false);
+                        setTelegramCode(null);
+                      }}
+                      className="btn btn-ghost btn-sm"
+                    >
+                      Try again
+                    </button>
+                  )}
+                  {!polling && (
+                    <button onClick={() => pollTelegramStatus()} className="btn btn-primary btn-sm ml-2">
+                      Check connection
+                    </button>
+                  )}
                 </div>
               )}
             </div>
