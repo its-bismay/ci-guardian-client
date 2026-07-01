@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { connectSSE } from '../lib/sse';
 import RunCard from '../components/RunCard';
@@ -8,6 +9,13 @@ import RepoFilter from '../components/RepoFilter';
 export default function Dashboard() {
   const [repoFilter, setRepoFilter] = useState(null);
   const [liveRuns, setLiveRuns] = useState([]);
+
+  const { data: channels } = useQuery({
+    queryKey: ['notification-channels'],
+    queryFn: () => api.get('/notifications/channels'),
+  });
+
+  const telegramConnected = channels?.some((c) => c.channel_type === 'telegram' && c.verified);
 
   const { data: repos } = useQuery({
     queryKey: ['repos'],
@@ -34,6 +42,12 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <RepoFilter repos={repos} selected={repoFilter} onChange={setRepoFilter} />
       </div>
+
+      {!telegramConnected && repos && repos.length > 0 && (
+        <div className="alert alert-warning mb-4 shadow-sm">
+          <span>Telegram not connected. <Link to="/settings/notifications" className="link link-hover font-semibold">Set it up</Link> to get failure alerts.</span>
+        </div>
+      )}
 
       {repos && repos.length === 0 ? (
         <div className="card bg-base-100 shadow-sm border border-base-300 p-12 text-center">

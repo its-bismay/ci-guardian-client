@@ -1,10 +1,20 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import useAuthStore from '../store/auth';
+import { api } from '../lib/api';
 import ThemeToggle from './ThemeToggle';
 
 export default function Layout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+
+  const { data: channels } = useQuery({
+    queryKey: ['notification-channels'],
+    queryFn: () => api.get('/notifications/channels'),
+    enabled: !!user,
+  });
+
+  const telegramConnected = channels?.some((c) => c.channel_type === 'telegram' && c.verified);
 
   const handleLogout = async () => {
     await logout();
@@ -19,7 +29,12 @@ export default function Layout() {
             CI Guardian
           </Link>
         </div>
-        <div className="flex-none gap-2">
+        <div className="flex-none gap-2 items-center">
+          <Link to="/settings/notifications" className="tooltip tooltip-bottom" data-tip={telegramConnected ? 'Telegram connected' : 'Telegram not connected'}>
+            {telegramConnected
+              ? <span className="text-success text-lg">📡</span>
+              : <span className="text-error text-lg">📡</span>}
+          </Link>
           <ThemeToggle />
           <ul className="menu menu-horizontal px-1">
             <li><Link to="/dashboard">Dashboard</Link></li>
