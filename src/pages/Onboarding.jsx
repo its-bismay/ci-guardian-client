@@ -13,6 +13,9 @@ export default function Onboarding() {
   const [search, setSearch] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [telegramError, setTelegramError] = useState(null);
+  const [telegramConnected, setTelegramConnected] = useState(false);
+  const [telegramSent, setTelegramSent] = useState(false);
+  const [polling, setPolling] = useState(false);
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
@@ -72,14 +75,32 @@ export default function Onboarding() {
 
   const connectTelegram = () => {
     setTelegramError(null);
+    setTelegramSent(true);
     api.get('/notifications/telegram/link-code').then((r) => {
       window.location.href = r.url;
+      pollTelegramStatus();
     }).catch((err) => {
       setTelegramError(err.message || 'Failed to get Telegram link.');
+      setTelegramSent(false);
     });
   };
 
-  const skip = () => navigate('/dashboard');
+  function pollTelegramStatus() {
+    setPolling(true);
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.get('/notifications/telegram/status');
+        if (res.connected) {
+          setTelegramConnected(true);
+          setPolling(false);
+          clearInterval(interval);
+        }
+      } catch { /* retry */ }
+    }, 2000);
+    setTimeout(() => { clearInterval(interval); setPolling(false); }, 120000);
+  }
+
+  const finish = () => navigate('/dashboard');
 
   const filtered = repos ? repos.filter((r) =>
     r.full_name.toLowerCase().includes(search.toLowerCase())
@@ -167,17 +188,42 @@ export default function Onboarding() {
               <h2 className="text-2xl font-bold mb-4">Connect Telegram</h2>
               {telegramError && <div className="alert alert-error mb-4 text-sm">{telegramError}</div>}
               <p className="text-base-content/70 mb-6">
-                Get CI alerts in Telegram (optional, skip if you prefer).
+                CI Guardian sends failure alerts to Telegram. <strong>This step is required.</strong>
               </p>
-              <button onClick={connectTelegram} className="btn btn-primary mb-4">
-                Connect Telegram
-              </button>
-              <div>
-                <button onClick={skip} className="btn btn-ghost">Skip for now</button>
-              </div>
-              <p className="mt-4 text-sm text-base-content/50">
-                You can always connect Telegram later in Settings.
-              </p>
+              {!telegramSent ? (
+                <button onClick={connectTelegram} className="btn btn-primary btn-lg mb-4">
+                  Connect Telegram
+                </button>
+              ) : telegramConnected ? (
+                <div className="mb-4">
+                  <div className="alert alert-success mb-4">✅ Telegram connected!</div>
+                  <button onClick={finish} className="btn btn-primary btn-lg">
+                    Go to Dashboard
+                  </button>
+                </div>
+              ) : (
+                <div className="mb-4">
+                  <p className="text-base-content/70 mb-2">
+                    Open Telegram and send this code to the <strong>CI Guardian</strong> bot:
+                  </p>
+                  <div className="text-2xl font-mono font-bold bg-base-300 py-3 px-6 rounded-lg inline-block mb-4">
+                    {params.get('installed') === '1' ? 'Check the bot on Telegram' : 'Waiting for connection...'}
+                  </div>
+                  <p className="text-sm text-base-content/50 mb-4">
+                    Search for <strong>@ci_guardian_bot</strong> in Telegram and send /start
+                  </p>
+                  <button
+                    onClick={() => {
+                      setTelegramSent(false);
+                      setTelegramConnected(false);
+                    }}
+                    className="btn btn-ghost btn-sm"
+                    disabled={polling}
+                  >
+                    {polling ? <><span className="loading loading-spinner loading-xs mr-1" /> Waiting...</> : 'Try again'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
