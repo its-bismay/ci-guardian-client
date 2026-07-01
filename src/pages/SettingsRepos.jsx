@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 export default function SettingsRepos() {
   const [search, setSearch] = useState('');
+  const [syncing, setSyncing] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: repos, isLoading } = useQuery({
@@ -18,6 +19,15 @@ export default function SettingsRepos() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['repos'] }),
   });
 
+  const syncRepos = async () => {
+    setSyncing(true);
+    try {
+      await api.post('/github/repos/sync');
+      queryClient.invalidateQueries({ queryKey: ['repos'] });
+    } catch { /* ignore */ }
+    setSyncing(false);
+  };
+
   const filtered = repos ? repos.filter((r) =>
     r.full_name.toLowerCase().includes(search.toLowerCase())
   ) : [];
@@ -26,6 +36,9 @@ export default function SettingsRepos() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Monitored Repos</h1>
+        <button onClick={syncRepos} className="btn btn-ghost btn-sm" disabled={syncing}>
+          {syncing ? <span className="loading loading-spinner loading-xs" /> : 'Re-sync from GitHub'}
+        </button>
       </div>
 
       {isLoading ? (

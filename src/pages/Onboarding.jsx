@@ -144,7 +144,12 @@ export default function Onboarding() {
 
           {step === 1 && (
             <div>
-              <h2 className="text-2xl font-bold mb-4">Select Repos to Monitor</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold">Select Repos to Monitor</h2>
+                <button onClick={syncRepos} className="btn btn-ghost btn-xs" disabled={syncing}>
+                  {syncing ? <span className="loading loading-spinner loading-xs" /> : 'Re-sync from GitHub'}
+                </button>
+              </div>
               {params.get('sync_error') === '1' && (
                 <div className="alert alert-warning mb-4 text-sm">
                   Repos installed but failed to sync from GitHub. <button onClick={syncRepos} className="btn btn-ghost btn-xs ml-2">{syncing ? <span className="loading loading-spinner loading-xs" /> : 'Retry'}</button>
