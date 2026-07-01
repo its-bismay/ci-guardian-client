@@ -10,6 +10,9 @@ export default function Onboarding() {
   const [selected, setSelected] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [syncing, setSyncing] = useState(false);
+  const [telegramError, setTelegramError] = useState(null);
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
@@ -21,15 +24,30 @@ export default function Onboarding() {
 
   useEffect(() => {
     if (step === 1 && repos === null) {
-      setError(null);
-      api.get('/github/repos').then((data) => {
-        setRepos(data);
-        if (data.length === 0) setError('No repos found. Make sure you installed the app on at least one repo.');
-      }).catch((err) => {
-        setError(err.message || 'Failed to fetch repos. Try again.');
-      });
+      fetchRepos();
     }
   }, [step]);
+
+  function fetchRepos() {
+    setError(null);
+    setRepos(null);
+    api.get('/github/repos').then((data) => {
+      setRepos(data);
+      if (data.length === 0 && !params.get('sync_error') && !params.get('installed')) {
+        setError('No repos found. Make sure you installed the app on at least one repo.');
+      }
+    }).catch((err) => {
+      setError(err.message || 'Failed to fetch repos.');
+    });
+  }
+
+  function syncRepos() {
+    setSyncing(true);
+    setError(null);
+    api.post('/github/repos/sync').then(() => fetchRepos()).catch((err) => {
+      setError(err.message || 'Failed to sync repos. Check your GitHub App configuration.');
+    }).finally(() => setSyncing(false));
+  }
 
   const installApp = () => {
     api.get('/github/install-url').then((res) => {
@@ -52,7 +70,20 @@ export default function Onboarding() {
     setLoading(false);
   };
 
+  const connectTelegram = () => {
+    setTelegramError(null);
+    api.get('/notifications/telegram/link-code').then((r) => {
+      window.location.href = r.url;
+    }).catch((err) => {
+      setTelegramError(err.message || 'Failed to get Telegram link.');
+    });
+  };
+
   const skip = () => navigate('/dashboard');
+
+  const filtered = repos ? repos.filter((r) =>
+    r.full_name.toLowerCase().includes(search.toLowerCase())
+  ) : [];
 
   return (
     <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
@@ -87,13 +118,30 @@ export default function Onboarding() {
           {step === 1 && (
             <div>
               <h2 className="text-2xl font-bold mb-4">Select Repos to Monitor</h2>
+              {params.get('sync_error') === '1' && (
+                <div className="alert alert-warning mb-4 text-sm">
+                  Repos installed but failed to sync from GitHub. <button onClick={syncRepos} className="btn btn-ghost btn-xs ml-2">{syncing ? <span className="loading loading-spinner loading-xs" /> : 'Retry'}</button>
+                </div>
+              )}
               {error && <div className="alert alert-error mb-4 text-sm">{error}
-                <button onClick={() => { setRepos(null); setError(null); }} className="btn btn-ghost btn-xs ml-2">Retry</button>
+                <button onClick={syncRepos} className="btn btn-ghost btn-xs ml-2">{syncing ? <span className="loading loading-spinner loading-xs" /> : 'Retry Sync'}</button>
               </div>}
+              <input
+                type="text"
+                placeholder="Search repos..."
+                className="input input-bordered w-full mb-3"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {repos === null && !error && <div className="flex justify-center py-4"><span className="loading loading-spinner" /></div>}
-                {repos && repos.length === 0 && !error && <p className="text-base-content/50">No repos found. Make sure you granted access to at least one repo.</p>}
-                {repos && repos.map((r) => (
+                {repos && repos.length === 0 && !error && (
+                  <p className="text-base-content/50 text-center py-4">
+                    No repos found. <button onClick={syncRepos} className="link link-hover">{syncing ? 'Syncing...' : 'Sync from GitHub'}</button>
+                  </p>
+                )}
+                {filtered.length === 0 && repos && repos.length > 0 && <p className="text-base-content/50 text-center py-4">No repos match your search.</p>}
+                {filtered.map((r) => (
                   <label key={r.id} className="flex items-center gap-3 p-2 hover:bg-base-200 rounded-lg cursor-pointer">
                     <input
                       type="checkbox"
@@ -117,13 +165,11 @@ export default function Onboarding() {
           {step === 2 && (
             <div className="text-center">
               <h2 className="text-2xl font-bold mb-4">Connect Telegram</h2>
+              {telegramError && <div className="alert alert-error mb-4 text-sm">{telegramError}</div>}
               <p className="text-base-content/70 mb-6">
                 Get CI alerts in Telegram (optional, skip if you prefer).
               </p>
-              <button
-                onClick={() => api.get('/notifications/telegram/link-code').then((r) => window.open(r.url, '_blank'))}
-                className="btn btn-primary mb-4"
-              >
+              <button onClick={connectTelegram} className="btn btn-primary mb-4">
                 Connect Telegram
               </button>
               <div>

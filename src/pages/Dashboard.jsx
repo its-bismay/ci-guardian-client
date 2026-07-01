@@ -35,15 +35,27 @@ export default function Dashboard() {
         <RepoFilter repos={repos} selected={repoFilter} onChange={setRepoFilter} />
       </div>
 
-      {runs.length === 0 ? (
+      {repos && repos.length === 0 ? (
         <div className="card bg-base-100 shadow-sm border border-base-300 p-12 text-center">
-          <h3 className="text-lg font-semibold mb-2">No runs yet</h3>
+          <h3 className="text-lg font-semibold mb-2">No repos connected</h3>
           <p className="text-base-content/60 mb-4">
-            Connect a repo and push a commit to see CI runs here.
+            Install the CI Guardian GitHub App and select repos to monitor.
           </p>
           <a href="/onboarding" className="btn btn-primary">
             Connect your first repo
           </a>
+        </div>
+      ) : runs.length === 0 ? (
+        <div className="card bg-base-100 shadow-sm border border-base-300 p-12 text-center">
+          <h3 className="text-lg font-semibold mb-2">No runs yet</h3>
+          <p className="text-base-content/60 mb-4">
+            Push a commit to a monitored repo and CI runs will appear here.
+          </p>
+          {repos && repos.length > 0 && (
+            <p className="text-sm text-base-content/40">
+              Monitoring {repos.length} repo{repos.length > 1 ? 's' : ''}
+            </p>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

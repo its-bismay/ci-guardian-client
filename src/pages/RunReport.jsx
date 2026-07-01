@@ -16,7 +16,7 @@ export default function RunReport() {
   const { data: report } = useQuery({
     queryKey: ['report', id],
     queryFn: () => api.get(`/reports/${id}`),
-    enabled: !!run?.conclusion === 'failure',
+    enabled: run?.conclusion === 'failure',
   });
 
   const feedbackMutation = useMutation({
