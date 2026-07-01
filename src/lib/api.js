@@ -1,10 +1,23 @@
 export const API_BASE = import.meta.env.VITE_API_URL || '';
 
+function getToken() {
+  try {
+    return localStorage.getItem('ci_guardian_token');
+  } catch {
+    return null;
+  }
+}
+
 class ApiClient {
   async request(path, options = {}) {
+    const headers = { 'Content-Type': 'application/json', ...options.headers };
+    const token = getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const res = await fetch(`${API_BASE}${path}`, {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...options.headers },
+      credentials: 'omit',
+      headers,
       ...options,
     });
     if (res.status === 204) return null;

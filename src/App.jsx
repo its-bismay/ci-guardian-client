@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import useAuthStore from './store/auth';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
+import AuthCallback from './pages/AuthCallback';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import RepoRuns from './pages/RepoRuns';
@@ -33,6 +34,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
       <Route
         path="/onboarding"
         element={<ProtectedRoute><Onboarding /></ProtectedRoute>}

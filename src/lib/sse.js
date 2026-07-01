@@ -1,7 +1,8 @@
 export function connectSSE(path, onEvent) {
-  const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  const url = `${BASE_URL}${path}`;
-  const source = new EventSource(url, { withCredentials: true });
+  const BASE_URL = import.meta.env.VITE_API_URL || '';
+  const token = localStorage.getItem('ci_guardian_token') || '';
+  const url = `${BASE_URL}${path}?token=${encodeURIComponent(token)}`;
+  const source = new EventSource(url);
 
   source.onmessage = (e) => {
     try {

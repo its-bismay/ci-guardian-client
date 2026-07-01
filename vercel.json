@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/auth/callback", "destination": "/index.html" },
     { "source": "/auth/(.*)", "destination": "https://ci-guardian-server.onrender.com/auth/$1" },
     { "source": "/github/(.*)", "destination": "https://ci-guardian-server.onrender.com/github/$1" },
     { "source": "/runs/(.*)", "destination": "https://ci-guardian-server.onrender.com/runs/$1" },
