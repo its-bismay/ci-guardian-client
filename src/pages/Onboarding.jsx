@@ -85,8 +85,8 @@ export default function Onboarding() {
       setTelegramBot(r.url.match(/t\.me\/([^?]+)/)?.[1] || 'bot');
       window.open(r.url, '_blank');
       pollTelegramStatus();
-    }).catch((err) => {
-      setTelegramError(err.message || 'Telegram not configured. Ask the admin to set TELEGRAM_BOT_TOKEN on Render.');
+    }).catch(() => {
+      setTelegramError('Could not connect to Telegram. Try again later.');
       setTelegramSent(false);
     });
   };
@@ -208,7 +208,7 @@ export default function Onboarding() {
                   </button>
                   <div>
                     <button onClick={finish} className="btn btn-ghost text-sm">
-                      Skip for now — set up later in Settings
+                      Skip for now
                     </button>
                   </div>
                 </div>

@@ -25,21 +25,16 @@ export default function SettingsNotifications() {
 
   const telegramChannel = channels?.find((c) => c.channel_type === 'telegram');
 
-  const setupWebhook = async () => {
-    setLinkError(null);
-    await api.post('/notifications/telegram/setup-webhook');
-  };
-
   const connectTelegram = async () => {
     setLinkError(null);
     setLinking(true);
     try {
-      await setupWebhook();
+      await api.post('/notifications/telegram/setup-webhook');
       const r = await api.get('/notifications/telegram/link-code');
       setLinkCode(r.code);
       window.open(r.url, '_blank');
-    } catch (err) {
-      setLinkError(err.message || 'Failed. Make sure TELEGRAM_BOT_TOKEN is set on Render.');
+    } catch {
+      setLinkError('Could not connect to Telegram. Please try again later.');
       setLinking(false);
     }
   };
@@ -94,9 +89,6 @@ export default function SettingsNotifications() {
               <button onClick={connectTelegram} className="btn btn-primary" disabled={linking}>
                 {linking ? <span className="loading loading-spinner loading-xs" /> : 'Connect Telegram'}
               </button>
-              <p className="text-xs text-base-content/40 mt-2">
-                Requires <code>TELEGRAM_BOT_TOKEN</code> env var and a bot created via BotFather.
-              </p>
             </div>
           )}
         </div>
