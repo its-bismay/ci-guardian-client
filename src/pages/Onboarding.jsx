@@ -232,7 +232,7 @@ export default function Onboarding() {
                     <code className="text-lg font-bold select-all">/start {telegramCode || '...'}</code>
                   </div>
                   <p className="text-sm text-base-content/50 mb-4">
-                    Search for <strong>@{telegramBot || 'ci_guardian_bot'}</strong> in Telegram
+                    Search for <strong>@{telegramBot || 'bibhabasu_ci_guardiant_bot'}</strong> in Telegram
                   </p>
                   <button onClick={() => pollTelegramStatus()} className="btn btn-primary btn-sm">
                     Check connection
